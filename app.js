@@ -57,10 +57,18 @@ function initGame(canvas, context, fighterImg, monsterImg) {
     messageRegistry(eventEmitter, Messages, fighter)
     window.addEventListener('keyup', (e) => {
     switch (e.key) {
-        case 'ArrowUp': eventEmitter.emit(Messages['up']);
-        case 'ArrowDown': eventEmitter.emit(Messages['down']);
-        case 'ArrowLeft': eventEmitter.emit(Messages['left']);
-        case 'ArrowRight': eventEmitter.emit(Messages['right']);
+        case 'ArrowUp': 
+            eventEmitter.emit(Messages['up']);
+            break;
+        case 'ArrowDown': 
+            eventEmitter.emit(Messages['down']);
+            break;
+        case 'ArrowLeft': 
+            eventEmitter.emit(Messages['left']);
+            break;
+        case 'ArrowRight': 
+            eventEmitter.emit(Messages['right']);
+            break;
     }
     })
     return all_objects
@@ -93,10 +101,10 @@ function createMonsters(canvas, monsterImg) {
 
 function messageRegistry(eventEmitter, Messages, fighter) {
     eventEmitter.on(Messages['up'], () => {
-        fighter.y += 5;
+        fighter.y -= 5;
     })
     eventEmitter.on(Messages['down'], () => {
-        fighter.y -= 5;
+        fighter.y += 5;
     })
     eventEmitter.on(Messages['left'], () => {
         fighter.x -= 5;
