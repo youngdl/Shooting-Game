@@ -5,6 +5,7 @@ const Messages = {
     'down': 'Messages-KEY_EVENT_DOWN',
     'left': 'Messages-KEY_EVENT_LEFT',
     'right': 'Messages-KEY_EVENT_RIGHT',
+    'shoot':'Message-KEY_EVENT_SPACEBAR'
 }
 
 window.onload = async () => {
@@ -13,7 +14,8 @@ window.onload = async () => {
     window.addEventListener('keydown', preventDefaultKeyDown)
     const fighterImg = await loadImage('./assets/fighter4.png')
     const monsterImg = await loadImage('./assets/monster.png')
-    all_objects = initGame(canvas, context, fighterImg, monsterImg);
+    const laserImg = await loadImage('./assets/laser.png')
+    all_objects = initGame(canvas, context, fighterImg, monsterImg, laserImg);
     let gameLoopId = setInterval(() => {
         context.clearRect(0, 0, canvas.width, canvas.height)
         context.fillRect(0, 0, canvas.width, canvas.height);
@@ -46,7 +48,7 @@ function preventDefaultKeyDown (e) {
     }
 };
 
-function initGame(canvas, context, fighterImg, monsterImg) {
+function initGame(canvas, context, fighterImg, monsterImg, laserImg) {
     let all_objects = []
     let fighter = createFighter(canvas, fighterImg);
     let monsters = createMonsters(canvas, monsterImg);
@@ -54,7 +56,7 @@ function initGame(canvas, context, fighterImg, monsterImg) {
     all_objects.push(...monsters)
     all_objects.forEach(obj => obj.draw(context))
     let eventEmitter = new EventEmitter();
-    messageRegistry(eventEmitter, Messages, fighter)
+    messageRegistry(eventEmitter, Messages, fighter, all_objects, laserImg)
     window.addEventListener('keyup', (e) => {
     switch (e.key) {
         case 'ArrowUp': 
@@ -69,9 +71,19 @@ function initGame(canvas, context, fighterImg, monsterImg) {
         case 'ArrowRight': 
             eventEmitter.emit(Messages['right']);
             break;
+        case ' ':
+            eventEmitter.emit(Messages['shoot']);
+            break;
     }
     })
     return all_objects
+}
+
+function isIntersected(obj1, obj2) {
+    return !(obj1.right < obj2.left ||
+        obj1.left < obj2.right ||
+        obj1.bottom < obj2.top ||
+        obj1.top < obj2.bottom) 
 }
 
 function createFighter(canvas, fighterImg) {
@@ -99,7 +111,7 @@ function createMonsters(canvas, monsterImg) {
     return monsters
 }
 
-function messageRegistry(eventEmitter, Messages, fighter) {
+function messageRegistry(eventEmitter, Messages, fighter, all_objects, laserImg) {
     eventEmitter.on(Messages['up'], () => {
         fighter.y -= 5;
     })
@@ -112,6 +124,16 @@ function messageRegistry(eventEmitter, Messages, fighter) {
     eventEmitter.on(Messages['right'], () => {
         fighter.x += 5;
     })
+    eventEmitter.on(Messages['shoot'], () => {
+        if (fighter.canFire()) {
+            let laser = fighter.fire();
+            laser.img = laserImg;
+            all_objects.push(laser)
+        }
+    })
+    // eventEmitter.on(Messages['shoot'], () => {
+
+    // })
 }
 
 class GameObject {
@@ -123,9 +145,30 @@ class GameObject {
         this.width = 0;
         this.height = 0;
         this.img = undefined; 
+        this.up = this.y;
+        this.bottom = this.y + this.height;
+        this.left = this.x;
+        this.right = this.x + this.width;
     }
     draw(ctx) {
         ctx.drawImage(this.img, this.x, this.y, this.width, this.height);
+    }
+}
+
+class Laser extends GameObject {
+    constructor (x, y) {
+        super(x, y);
+        this.width = 9;
+        this.height = 33;
+        this.type = 'Laser';
+        let id = setInterval(() => {
+            if (this.y > 0) {
+                this.y -= 15;
+            }else {
+                this.dead = true;
+                clearInterval(id);
+            }
+        }, 100)
     }
 }
 
@@ -135,6 +178,22 @@ class Fighter extends GameObject {
         this.width = 100;
         this.height = 78;
         this.speed = 0;
+        this.coolDown = 0;
+    }
+    canFire() {
+        return this.coolDown === 0;
+    }
+    fire() {
+        this.coolDown = 1000;
+        let laser = new Laser(this.x + 45, this.y);
+        let id = setInterval(() => {
+            if (this.coolDown > 0) {
+                this.coolDown -= 100;
+            }else{
+                clearInterval(id)
+            }
+        }, 100)
+        return laser
     }   
 }
 
