@@ -7,7 +7,7 @@ const Messages = {
     'right': 'Messages-KEY_EVENT_RIGHT',
     'shoot':'Message-KEY_EVENT_SPACEBAR'
 }
-
+let all_objects = [];
 window.onload = async () => {
     let canvas = document.getElementById('myCanvas');
     let context = canvas.getContext('2d');
@@ -15,14 +15,29 @@ window.onload = async () => {
     const fighterImg = await loadImage('./assets/fighter4.png')
     const monsterImg = await loadImage('./assets/monster.png')
     const laserImg = await loadImage('./assets/laser.png')
-    all_objects = initGame(canvas, context, fighterImg, monsterImg, laserImg);
+    initGame(canvas, context, fighterImg, monsterImg, laserImg);
     let gameLoopId = setInterval(() => {
         context.clearRect(0, 0, canvas.width, canvas.height)
         context.fillRect(0, 0, canvas.width, canvas.height);
         context.fillStyle = 'black';
+        updateObjects();
         all_objects.forEach(obj => obj.draw(context))
     }, 100);
 };
+
+function updateObjects() {
+    const all_monsters = all_objects.filter(obj => obj.type==='Enemy');
+    const all_lasers = all_objects.filter(obj => obj.type==='Laser');
+    all_lasers.forEach((l) => {
+        all_monsters.forEach((m) => {
+            if (isIntersected(l, m)) {
+                l.dead = true;
+                m.dead = true;
+            }
+        })
+    })
+    all_objects = all_objects.filter(obj => obj.dead==false);
+}
 
 function loadImage(path) {
     return new Promise(resolve => {
@@ -49,14 +64,13 @@ function preventDefaultKeyDown (e) {
 };
 
 function initGame(canvas, context, fighterImg, monsterImg, laserImg) {
-    let all_objects = []
     let fighter = createFighter(canvas, fighterImg);
     let monsters = createMonsters(canvas, monsterImg);
     all_objects.push(fighter)
     all_objects.push(...monsters)
     all_objects.forEach(obj => obj.draw(context))
     let eventEmitter = new EventEmitter();
-    messageRegistry(eventEmitter, Messages, fighter, all_objects, laserImg)
+    messageRegistry(eventEmitter, Messages, fighter, laserImg)
     window.addEventListener('keyup', (e) => {
     switch (e.key) {
         case 'ArrowUp': 
@@ -76,14 +90,14 @@ function initGame(canvas, context, fighterImg, monsterImg, laserImg) {
             break;
     }
     })
-    return all_objects
 }
 
 function isIntersected(obj1, obj2) {
-    return !(obj1.right < obj2.left ||
-        obj1.left < obj2.right ||
-        obj1.bottom < obj2.top ||
-        obj1.top < obj2.bottom) 
+    return !(
+        obj1.right() < obj2.left() ||
+        obj1.left() > obj2.right() ||
+        obj1.bottom() < obj2.top() ||
+        obj1.top() > obj2.bottom()) 
 }
 
 function createFighter(canvas, fighterImg) {
@@ -111,18 +125,18 @@ function createMonsters(canvas, monsterImg) {
     return monsters
 }
 
-function messageRegistry(eventEmitter, Messages, fighter, all_objects, laserImg) {
+function messageRegistry(eventEmitter, Messages, fighter, laserImg) {
     eventEmitter.on(Messages['up'], () => {
-        fighter.y -= 5;
+        fighter.y -= 15;
     })
     eventEmitter.on(Messages['down'], () => {
-        fighter.y += 5;
+        fighter.y += 15;
     })
     eventEmitter.on(Messages['left'], () => {
-        fighter.x -= 5;
+        fighter.x -= 15;
     })
     eventEmitter.on(Messages['right'], () => {
-        fighter.x += 5;
+        fighter.x += 15;
     })
     eventEmitter.on(Messages['shoot'], () => {
         if (fighter.canFire()) {
@@ -131,9 +145,6 @@ function messageRegistry(eventEmitter, Messages, fighter, all_objects, laserImg)
             all_objects.push(laser)
         }
     })
-    // eventEmitter.on(Messages['shoot'], () => {
-
-    // })
 }
 
 class GameObject {
@@ -145,11 +156,12 @@ class GameObject {
         this.width = 0;
         this.height = 0;
         this.img = undefined; 
-        this.up = this.y;
-        this.bottom = this.y + this.height;
-        this.left = this.x;
-        this.right = this.x + this.width;
     }
+    top = () => this.y;
+    bottom = () => this.y + this.height;
+    left = () => this.x;
+    right = () => this.x + this.width;
+
     draw(ctx) {
         ctx.drawImage(this.img, this.x, this.y, this.width, this.height);
     }
@@ -168,7 +180,7 @@ class Laser extends GameObject {
                 this.dead = true;
                 clearInterval(id);
             }
-        }, 100)
+        }, 50)
     }
 }
 
