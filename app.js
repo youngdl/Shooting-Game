@@ -15,17 +15,18 @@ window.onload = async () => {
     const fighterImg = await loadImage('./assets/fighter4.png')
     const monsterImg = await loadImage('./assets/monster.png')
     const laserImg = await loadImage('./assets/laser.png')
+    const explodeImg = await loadImage('./assets/explode.png')
     initGame(canvas, context, fighterImg, monsterImg, laserImg);
     let gameLoopId = setInterval(() => {
         context.clearRect(0, 0, canvas.width, canvas.height)
         context.fillRect(0, 0, canvas.width, canvas.height);
         context.fillStyle = 'black';
-        updateObjects();
+        updateObjects(explodeImg);
         all_objects.forEach(obj => obj.draw(context))
     }, 100);
 };
 
-function updateObjects() {
+function updateObjects(explodeImg) {
     const all_monsters = all_objects.filter(obj => obj.type==='Enemy');
     const all_lasers = all_objects.filter(obj => obj.type==='Laser');
     all_lasers.forEach((l) => {
@@ -33,6 +34,9 @@ function updateObjects() {
             if (isIntersected(l, m)) {
                 l.dead = true;
                 m.dead = true;
+                let explode = new Explode(m.x + m.width/5, m.y + m.height/3);
+                explode.img = explodeImg;
+                all_objects.push(explode)
             }
         })
     })
@@ -164,6 +168,19 @@ class GameObject {
 
     draw(ctx) {
         ctx.drawImage(this.img, this.x, this.y, this.width, this.height);
+    }
+}
+
+class Explode extends GameObject {
+    constructor(x, y) {
+        super(x, y)
+        this.height = 54;
+        this.width = 56;
+        this.type = 'Explode';
+    }
+    draw(ctx) {
+        ctx.drawImage(this.img, this.x, this.y, this.width, this.height);
+        setTimeout(() => {this.dead=true}, 50)
     }
 }
 
