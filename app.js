@@ -34,11 +34,11 @@ function drawMainFrame(canvas, context, fighter, lifeImg) {
     context.fillStyle = 'white';
     context.fillText(`Scores: ${fighter.score}`, 30, canvas.height-20)
     for (i=1;i<=fighter.life;i++) {
-        let y = canvas.height - 45;
+        let y = canvas.height - 35;
         let x = canvas.width - i*lifeImg.width - 5;
         context.drawImage(lifeImg, x, y)
     }
-    context.fillText('Life: ', canvas.width-180, canvas.height-20)
+    context.fillText('Life: ', canvas.width-150, canvas.height-15)
 }
 
 function updateObjects(explodeImg) {
