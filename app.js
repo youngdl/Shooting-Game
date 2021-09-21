@@ -16,19 +16,35 @@ window.onload = async () => {
     const monsterImg = await loadImage('./assets/monster.png')
     const laserImg = await loadImage('./assets/laser.png')
     const explodeImg = await loadImage('./assets/explode.png')
-    initGame(canvas, context, fighterImg, monsterImg, laserImg);
+    const lifeImg = await loadImage('./assets/life.png')
+    initGame(canvas, fighterImg, monsterImg, laserImg);
     let gameLoopId = setInterval(() => {
-        context.clearRect(0, 0, canvas.width, canvas.height)
-        context.fillRect(0, 0, canvas.width, canvas.height);
-        context.fillStyle = 'black';
+        let fighter = all_objects.filter(obj => obj.type=='Fighter')[0];
+        drawMainFrame(canvas, context, fighter, lifeImg)
         updateObjects(explodeImg);
         all_objects.forEach(obj => obj.draw(context))
     }, 100);
 };
 
+function drawMainFrame(canvas, context, fighter, lifeImg) {
+    context.clearRect(0, 0, canvas.width, canvas.height)
+    context.fillStyle = 'black';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.font = '25px serif';
+    context.fillStyle = 'white';
+    context.fillText(`Scores: ${fighter.score}`, 30, canvas.height-20)
+    for (i=1;i<=fighter.life;i++) {
+        let y = canvas.height - 45;
+        let x = canvas.width - i*lifeImg.width - 5;
+        context.drawImage(lifeImg, x, y)
+    }
+    context.fillText('Life: ', canvas.width-180, canvas.height-20)
+}
+
 function updateObjects(explodeImg) {
     const all_monsters = all_objects.filter(obj => obj.type==='Enemy');
     const all_lasers = all_objects.filter(obj => obj.type==='Laser');
+    const fighter = all_objects.filter(obj => obj.type==='Fighter')[0];
     all_lasers.forEach((l) => {
         all_monsters.forEach((m) => {
             if (isIntersected(l, m)) {
@@ -37,6 +53,7 @@ function updateObjects(explodeImg) {
                 let explode = new Explode(m.x + m.width/5, m.y + m.height/3);
                 explode.img = explodeImg;
                 all_objects.push(explode)
+                fighter.score += 100;
             }
         })
     })
@@ -67,12 +84,11 @@ function preventDefaultKeyDown (e) {
     }
 };
 
-function initGame(canvas, context, fighterImg, monsterImg, laserImg) {
+function initGame(canvas, fighterImg, monsterImg, laserImg) {
     let fighter = createFighter(canvas, fighterImg);
     let monsters = createMonsters(canvas, monsterImg);
     all_objects.push(fighter)
     all_objects.push(...monsters)
-    all_objects.forEach(obj => obj.draw(context))
     let eventEmitter = new EventEmitter();
     messageRegistry(eventEmitter, Messages, fighter, laserImg)
     window.addEventListener('keyup', (e) => {
@@ -208,6 +224,9 @@ class Fighter extends GameObject {
         this.height = 78;
         this.speed = 0;
         this.coolDown = 0;
+        this.score = 0;
+        this.life = 3;
+        this.type = 'Fighter';
     }
     canFire() {
         return this.coolDown === 0;
