@@ -7,7 +7,13 @@ const Messages = {
     'right': 'Messages-KEY_EVENT_RIGHT',
     'shoot':'Message-KEY_EVENT_SPACEBAR'
 }
+let messageElement = document.getElementById('message');
+let messageBoxElement = document.getElementById('message-box');
+let canvasContainerElement = document.getElementById('canvasContainer');
+let playAgainButtonElement = document.getElementById('play-again');
+let stopPlayButtonElement = document.getElementById('thats-it');
 let all_objects = [];
+
 window.onload = async () => {
     let canvas = document.getElementById('myCanvas');
     let context = canvas.getContext('2d');
@@ -20,24 +26,46 @@ window.onload = async () => {
     initGame(canvas, fighterImg, monsterImg, laserImg);
     let gameLoopId = setInterval(() => {
         let fighter = all_objects.filter(obj => obj.type=='Fighter')[0];
-        drawMainFrame(canvas, context, fighter, lifeImg)
-        updateObjects(explodeImg);
-        all_objects.forEach(obj => obj.draw(context))
+        let monsters = all_objects.filter(obj => obj.type=='Enemy');
+        if (fighter.life >= 0 && monsters.length>0) {
+            updateObjects(explodeImg);
+            drawMainFrame(canvas, context, fighter, lifeImg)
+            all_objects.forEach(obj => obj.draw(context))
+        } else {
+            clearInterval(gameLoopId)
+            let message;
+            if (fighter.life < 0) {
+                message = `Sorry! You lose.<br>Your score is ${fighter.score}!`;
+            } else {
+                message = `Congratulations! You win.<br>Your score is ${fighter.score}!`;
+            }
+            messageElement.innerHTML = message;
+            canvasContainerElement.style.opacity = 0.5;
+            messageBoxElement.style.display = 'flex';
+        }
     }, 100);
 };
+stopPlayButtonElement.addEventListener('click', () => {
+    messageBoxElement.style.display = 'none';
+    canvasContainerElement.style.opacity = 1;
+})
+playAgainButtonElement.addEventListener('click', () => {
+    location.reload()
+})
 
 function drawMainFrame(canvas, context, fighter, lifeImg) {
     context.clearRect(0, 0, canvas.width, canvas.height)
     context.fillStyle = 'black';
     context.fillRect(0, 0, canvas.width, canvas.height);
-    context.font = '25px serif';
-    context.fillStyle = 'white';
+    context.font = 'bold 25px serif';
+    context.fillStyle = '#42D531';
     context.fillText(`Scores: ${fighter.score}`, 30, canvas.height-20)
     for (i=1;i<=fighter.life;i++) {
         let y = canvas.height - 35;
         let x = canvas.width - i*lifeImg.width - 5;
         context.drawImage(lifeImg, x, y)
     }
+    // context.fillStyle = 'green';
     context.fillText('Life: ', canvas.width-150, canvas.height-15)
 }
 
@@ -56,6 +84,12 @@ function updateObjects(explodeImg) {
                 fighter.score += 100;
             }
         })
+    })
+    all_monsters.forEach((m) => {
+        if (isIntersected(m, fighter)) {
+            fighter.life -= 1;
+            m.dead = true;
+        }
     })
     all_objects = all_objects.filter(obj => obj.dead==false);
 }
