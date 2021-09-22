@@ -78,9 +78,6 @@ function updateObjects(explodeImg, bangImg) {
             if (isIntersected(l, m)) {
                 l.dead = true;
                 m.dead = true;
-                // let explode = new Explode(m.x + m.width/5, m.y + m.height/3);
-                // explode.img = explodeImg;
-                // all_objects.push(explode)
                 createExplode(m.x + m.width/5, m.y + m.height/3, explodeImg)
                 fighter.score += 100;
             }
