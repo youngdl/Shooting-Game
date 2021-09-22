@@ -23,12 +23,13 @@ window.onload = async () => {
     const laserImg = await loadImage('./assets/laser.png')
     const explodeImg = await loadImage('./assets/explode.png')
     const lifeImg = await loadImage('./assets/life.png')
+    const bangImg = await loadImage('./assets/bang.png')
     initGame(canvas, fighterImg, monsterImg, laserImg);
     let gameLoopId = setInterval(() => {
         let fighter = all_objects.filter(obj => obj.type=='Fighter')[0];
         let monsters = all_objects.filter(obj => obj.type=='Enemy');
         if (fighter.life >= 0 && monsters.length>0) {
-            updateObjects(explodeImg);
+            updateObjects(explodeImg, bangImg);
             drawMainFrame(canvas, context, fighter, lifeImg)
             all_objects.forEach(obj => obj.draw(context))
         } else {
@@ -65,11 +66,10 @@ function drawMainFrame(canvas, context, fighter, lifeImg) {
         let x = canvas.width - i*lifeImg.width - 5;
         context.drawImage(lifeImg, x, y)
     }
-    // context.fillStyle = 'green';
     context.fillText('Life: ', canvas.width-150, canvas.height-15)
 }
 
-function updateObjects(explodeImg) {
+function updateObjects(explodeImg, bangImg) {
     const all_monsters = all_objects.filter(obj => obj.type==='Enemy');
     const all_lasers = all_objects.filter(obj => obj.type==='Laser');
     const fighter = all_objects.filter(obj => obj.type==='Fighter')[0];
@@ -78,9 +78,10 @@ function updateObjects(explodeImg) {
             if (isIntersected(l, m)) {
                 l.dead = true;
                 m.dead = true;
-                let explode = new Explode(m.x + m.width/5, m.y + m.height/3);
-                explode.img = explodeImg;
-                all_objects.push(explode)
+                // let explode = new Explode(m.x + m.width/5, m.y + m.height/3);
+                // explode.img = explodeImg;
+                // all_objects.push(explode)
+                createExplode(m.x + m.width/5, m.y + m.height/3, explodeImg)
                 fighter.score += 100;
             }
         })
@@ -89,6 +90,7 @@ function updateObjects(explodeImg) {
         if (isIntersected(m, fighter)) {
             fighter.life -= 1;
             m.dead = true;
+            createBang((m.x+fighter.x+m.width)/2, (m.y+fighter.y+fighter.height)/2, bangImg)
         }
     })
     all_objects = all_objects.filter(obj => obj.dead==false);
@@ -177,6 +179,21 @@ function createMonsters(canvas, monsterImg) {
         }
     }
     return monsters
+}
+
+function createExplode(x, y, Img) {
+    let explode = new Explode(x, y);
+    explode.img = Img;
+    all_objects.push(explode)
+}
+
+function createBang(x, y, Img) {
+    let bang = new Explode(x, y);
+    bang.img = Img;
+    bang.height = 53;
+    bang.width = 56;
+    bang.type = 'Bang';
+    all_objects.push(bang)
 }
 
 function messageRegistry(eventEmitter, Messages, fighter, laserImg) {
