@@ -28,13 +28,22 @@ window.onload = async () => {
     let gameLoopId = setInterval(() => {
         let fighter = all_objects.filter(obj => obj.type=='Fighter')[0];
         let monsters = all_objects.filter(obj => obj.type=='Enemy');
+        let message;
+        monsters.forEach((m) => {
+            if (m.y >= canvas.height - m.height) {
+                clearInterval(gameLoopId)
+                message = `Sorry! You lose.<br>Your score is ${fighter.score}!`;
+                messageElement.innerHTML = message;
+                canvasContainerElement.style.opacity = 0.5;
+                messageBoxElement.style.display = 'flex';
+            }
+        })
         if (fighter.life >= 0 && monsters.length>0) {
             updateObjects(explodeImg, bangImg);
             drawMainFrame(canvas, context, fighter, lifeImg)
             all_objects.forEach(obj => obj.draw(context))
         } else {
             clearInterval(gameLoopId)
-            let message;
             if (fighter.life < 0) {
                 message = `Sorry! You lose.<br>Your score is ${fighter.score}!`;
             } else {
